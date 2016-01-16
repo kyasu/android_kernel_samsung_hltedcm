@@ -29,6 +29,7 @@
 #include "fci_oal.h"
 
 #define BBM_BASE_ADDR       0x00
+#define BBM_BASE_OFFSET     0x00
 
 #define PPI_LEN             0x10
 #define PPI_REG             0x20

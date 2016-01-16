@@ -1,26 +1,13 @@
 /*****************************************************************************
-	Copyright(c) 2013 FCI Inc. All Rights Reserved
+ Copyright(c) 2009 FCI Inc. All Rights Reserved
 
-	File name : fc8300.h
+ File name : bbm.c
 
-	Description : Header file of Driver
+ Description : API of dmb baseband module
 
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-
-	History :
-	----------------------------------------------------------------------
+ History :
+ ----------------------------------------------------------------------
+ 2009/08/29 	jason		initial
 *******************************************************************************/
 
 #ifndef __ISDBT_H__
@@ -47,12 +34,7 @@ struct ioctl_info{
 	unsigned long buff[128];
 };
 
-typedef struct _tuner_sts_data {
-	unsigned long	open_cnt;
-	unsigned long	moni_cnt;
-} TUNER_STS_DATA;
-
-#define IOCTL_MAXNR                     28
+#define IOCTL_MAXNR                     25
 
 #define IOCTL_ISDBT_RESET	\
 	_IO(IOCTL_MAGIC, 0)
@@ -113,15 +95,6 @@ typedef struct _tuner_sts_data {
 #define IOCTL_ISDBT_POWER_OFF	\
 	_IO(IOCTL_MAGIC, 24)
 
-#define TUNER_IOCTL_VALGET_OPENCNT	\
-	_IO(IOCTL_MAGIC, 25)
-
-#define TUNER_IOCTL_VALSET_MONICNT	\
-	_IO(IOCTL_MAGIC, 26)	
-
-#define IOCTL_ISDBT_TUNER_PKT_MODE	\
-	_IOW(IOCTL_MAGIC, 27,struct ioctl_info)	
-	
 struct ISDBT_OPEN_INFO_T{
 	HANDLE				*hInit;
 	struct list_head		hList;
