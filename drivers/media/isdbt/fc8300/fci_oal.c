@@ -37,7 +37,7 @@ void print_log(HANDLE handle, s8 *fmt, ...)
 	va_start(ap, fmt);
 	vsprintf(str, fmt, ap);
 
-	printk(KERN_ERR"%s", str);
+	pr_info("%s", str);
 
 	va_end(ap);
 }
