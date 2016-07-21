@@ -5,6 +5,10 @@ obj-$(CONFIG_DVB_MPQ) += dvb/
 ifeq ($(CONFIG_SEC_H_PROJECT),y)
 obj-$(CONFIG_MSMB_CAMERA) += camera_h/
 else
+ifeq ($(CONFIG_MACH_JS01LTEDCM),y)
+obj-$(CONFIG_MSMB_CAMERA) += camera_h/
+else
 obj-$(CONFIG_MSMB_CAMERA) += camera_v2/
+endif
 endif
 obj-y += vcap/
