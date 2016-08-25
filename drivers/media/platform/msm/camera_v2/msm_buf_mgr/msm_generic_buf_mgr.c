@@ -35,7 +35,7 @@ static int msm_buf_mngr_get_buf(struct msm_buf_mngr_device *buf_mngr_dev,
 	new_entry->vb2_buf = buf_mngr_dev->vb2_ops.get_buf(buf_info->session_id,
 		buf_info->stream_id);
 	if (!new_entry->vb2_buf) {
-		pr_debug("%s:Get buf is null\n", __func__);
+		pr_err("%s:Get buf is null\n", __func__);	// add debug log for getting buffer fail CN#01399812
 		kfree(new_entry);
 		return -EINVAL;
 	}
@@ -109,7 +109,7 @@ static void msm_buf_mngr_sd_shutdown(struct msm_buf_mngr_device *buf_mngr_dev)
 {
 	unsigned long flags;
 	struct msm_get_bufs *bufs, *save;
-		
+
 	spin_lock_irqsave(&buf_mngr_dev->buf_q_spinlock, flags);
 	if (!list_empty(&buf_mngr_dev->buf_qhead)) {
 		list_for_each_entry_safe(bufs, save, &buf_mngr_dev->buf_qhead, entry) {
@@ -166,6 +166,9 @@ static long msm_buf_mngr_subdev_ioctl(struct v4l2_subdev *sd,
 	switch (cmd) {
 	case VIDIOC_MSM_BUF_MNGR_GET_BUF:
 		rc = msm_buf_mngr_get_buf(buf_mngr_dev, argp);
+		if (rc != 0) {
+			pr_err("%s cmd = %d, rc = %d \n", __func__, cmd, rc);	// add debug log for getting buffer fail CN#01399812
+		}
 		break;
 	case VIDIOC_MSM_BUF_MNGR_BUF_DONE:
 		rc = msm_buf_mngr_buf_done(buf_mngr_dev, argp);
@@ -241,9 +244,9 @@ static int __init msm_buf_mngr_init(void)
 	INIT_LIST_HEAD(&msm_buf_mngr_dev->buf_qhead);
 	spin_lock_init(&msm_buf_mngr_dev->buf_q_spinlock);
 	return rc;
-    
+
 register_error:
-    kfree(msm_buf_mngr_dev); 
+    kfree(msm_buf_mngr_dev);
     return rc;
 }
 

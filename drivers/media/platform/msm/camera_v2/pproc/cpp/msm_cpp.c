@@ -778,7 +778,7 @@ static int cpp_init_hardware(struct cpp_device *cpp_dev)
 			goto req_irq_fail;
 		}
 		cpp_dev->buf_mgr_subdev = msm_buf_mngr_get_subdev();
-		
+
 		rc = msm_cpp_buffer_ops(cpp_dev,VIDIOC_MSM_BUF_MNGR_INIT, NULL);
 		if (rc < 0) {
 			pr_err("buf mngr init failed\n");
@@ -1478,6 +1478,11 @@ static int msm_cpp_cfg(struct cpp_device *cpp_dev,
 	if (cpp_dev->hw_info.cpp_hw_version == 0x10010000) {
 		fw_version_1_2_x = 2;
 	}
+#ifdef CONFIG_MACH_CHAGALL_KDI
+	else if (cpp_dev->hw_info.cpp_hw_version == CPP_HW_VERSION_1_1_1) {
+		fw_version_1_2_x = 2;
+	}
+#endif
 	for (i = 0; i < num_stripes; i++) {
 		cpp_frame_msg[(133 + fw_version_1_2_x) + i * 27] +=
 			(uint32_t) in_phyaddr;
