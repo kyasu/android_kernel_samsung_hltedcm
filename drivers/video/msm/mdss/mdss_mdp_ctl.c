@@ -399,6 +399,12 @@ int mdss_mdp_perf_calc_pipe(struct mdss_mdp_pipe *pipe,
 		perf->bw_overlap = (quota / dst.h) * v_total;
 	}
 
+     /* The following change has been taken from CL 2767750. The bw has been increased as a fix
+      * for underrun during UHD video play cases. */
+	if ( ((pipe->src.h * pipe->src.w) / (pipe->dst.h * pipe->dst.w)) > 6) {
+		perf->bw_overlap = perf->bw_overlap * 2;
+	}
+
 	if (apply_fudge)
 		perf->mdp_clk_rate = mdss_mdp_clk_fudge_factor(mixer, rate);
 	else
@@ -701,7 +707,8 @@ int mdss_mdp_perf_bw_check(struct mdss_mdp_ctl *ctl,
 {
 	struct mdss_data_type *mdata = ctl->mdata;
 	struct mdss_mdp_perf_params perf;
-	u32 bw, threshold;
+	u32 bw, threshold, i;
+	u64 bw_sum_of_intfs = 0;
 
 	/* we only need bandwidth check on real-time clients (interfaces) */
 	if (ctl->intf_type == MDSS_MDP_NO_INTF)
@@ -710,11 +717,21 @@ int mdss_mdp_perf_bw_check(struct mdss_mdp_ctl *ctl,
 	__mdss_mdp_perf_calc_ctl_helper(ctl, &perf,
 			left_plist, left_cnt, right_plist, right_cnt);
 
+	ctl->bw_pending = perf.bw_ctl;
+ 
+	for (i = 0; i < mdata->nctl; i++) {
+	struct mdss_mdp_ctl *temp = mdata->ctl_off + i;
+	if (temp->power_on && (temp->intf_type != MDSS_MDP_NO_INTF))
+	bw_sum_of_intfs += temp->bw_pending;
+	}
+
 	/* convert bandwidth to kb */
-	bw = DIV_ROUND_UP_ULL(perf.bw_ctl, 1000);
+	bw = DIV_ROUND_UP_ULL(bw_sum_of_intfs, 1000);
 	pr_debug("calculated bandwidth=%uk\n", bw);
 
-	threshold = ctl->is_video_mode ? mdata->max_bw_low : mdata->max_bw_high;
+	threshold = (ctl->is_video_mode ||
+	mdss_mdp_video_mode_intf_connected(ctl)) ?
+	mdata->max_bw_low : mdata->max_bw_high;
 	if (bw > threshold) {
 		pr_debug("exceeds bandwidth: %ukb > %ukb\n", bw, threshold);
 		return -E2BIG;

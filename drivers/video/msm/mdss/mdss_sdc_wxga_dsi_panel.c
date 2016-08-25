@@ -576,6 +576,7 @@ extern void pwm_backlight_enable(void);
 
 static int samsung_dsi_panel_event_handler(int event)
 {
+	static int first_init = 0;
 	pr_debug("SS DSI Event Handler");
 		switch (event) {
 			case MDSS_EVENT_BACKLIGHT_LATE_ON:
@@ -589,6 +590,10 @@ static int samsung_dsi_panel_event_handler(int event)
 					msleep(1);
 					pwm_backlight_enable();
 					msleep(1);
+					if (!first_init) {
+						mdss_fb_set_backlight(msd.mfd, 255);
+						first_init = 1;
+					}
 					pr_info("SS DSI Event Handler Backlight Late on");
 					}
 					msd.dstat.wait_bl_on = 0;
@@ -761,7 +766,7 @@ static int mdss_dsi_parse_dcs_cmds(struct device_node *np,
 
 	return 0;
 }
-static int mdss_panel_dt_get_dst_fmt(u32 bpp, char mipi_mode, u32 pixel_packing,
+int mdss_panel_dt_get_dst_fmt(u32 bpp, char mipi_mode, u32 pixel_packing,
 				char *dst_format)
 {
 	int rc = 0;

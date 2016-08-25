@@ -208,7 +208,7 @@ static inline void mdss_mdp_cmd_clk_on(struct mdss_mdp_cmd_ctx *ctx)
 {
 	unsigned long flags;
 	struct mdss_data_type *mdata = mdss_mdp_get_mdata();
-	int rc;
+	int irq_en, rc;
 
 	if (!ctx->panel_on) {
 		pr_info("%s: Ignore clock on because the unblank does not finished\n", __func__);
@@ -248,10 +248,13 @@ static inline void mdss_mdp_cmd_clk_on(struct mdss_mdp_cmd_ctx *ctx)
 		mdss_mdp_hist_intr_setup(&mdata->hist_intr, MDSS_IRQ_RESUME);
 	}
 	spin_lock_irqsave(&ctx->clk_lock, flags);
-	if (!ctx->rdptr_enabled)
-		mdss_mdp_irq_enable(MDSS_MDP_IRQ_PING_PONG_RD_PTR, ctx->pp_num);
+	irq_en =  !ctx->rdptr_enabled;
 	ctx->rdptr_enabled = VSYNC_EXPIRE_TICK;
 	spin_unlock_irqrestore(&ctx->clk_lock, flags);
+
+	if (irq_en)
+		mdss_mdp_irq_enable(MDSS_MDP_IRQ_PING_PONG_RD_PTR, ctx->pp_num);
+		
 	mutex_unlock(&ctx->clk_mtx);
 }
 
@@ -571,6 +574,7 @@ static void clk_ctrl_work(struct work_struct *work)
 static void __mdss_mdp_cmd_ulps_work(struct work_struct *work)
 {
 	struct delayed_work *dw = to_delayed_work(work);
+	struct mdss_data_type *mdata = mdss_mdp_get_mdata();
 	struct mdss_mdp_cmd_ctx *ctx =
 		container_of(dw, struct mdss_mdp_cmd_ctx, ulps_work);
 
@@ -587,8 +591,11 @@ static void __mdss_mdp_cmd_ulps_work(struct work_struct *work)
 	if (!mdss_mdp_ctl_intf_event(ctx->ctl, MDSS_EVENT_DSI_ULPS_CTRL,
 		(void *)1)) {
 		ctx->ulps = true;
-		ctx->ctl->play_cnt = 0;
-		mdss_mdp_footswitch_ctrl_ulps(0, &ctx->ctl->mfd->pdev->dev);
+		if (mdata->idle_pc_enabled) {
+			ctx->ctl->play_cnt = 0;
+			mdss_mdp_footswitch_ctrl_idle_pc(0,
+					&ctx->ctl->mfd->pdev->dev);
+		}
 	}
 }
 
@@ -925,19 +932,11 @@ int mdss_mdp_cmd_stop(struct mdss_mdp_ctl *ctl)
 			} else {
 				pinfo = &ctl->panel_data->panel_info;
 
-#if defined(CONFIG_MACH_KLTE_CUDUOS) || defined(CONFIG_MACH_H3G_CHN_OPEN) || defined(CONFIG_MACH_H3G_CHN_CMCC) || defined(CONFIG_MACH_HLTE_CHN_CMCC) || defined(CONFIG_MACH_HLTE_CHN_TDOPEN) 
 				mdss_mdp_irq_disable
 					(MDSS_MDP_IRQ_PING_PONG_RD_PTR,
 							ctx->pp_num);
 				ctx->rdptr_enabled = 0;
-#else
-				if (pinfo->panel_dead) {
-					mdss_mdp_irq_disable
-						(MDSS_MDP_IRQ_PING_PONG_RD_PTR,
-								ctx->pp_num);
-					ctx->rdptr_enabled = 0;
-				}
-#endif
+
 			}
 		}
 	}

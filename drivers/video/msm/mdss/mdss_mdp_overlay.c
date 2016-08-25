@@ -1112,8 +1112,9 @@ int mdss_mdp_overlay_start(struct msm_fb_data_type *mfd)
 	}
 
 	if (ctl->power_on) {
-		if (mdp5_data->mdata->ulps) {
-			rc = mdss_mdp_footswitch_ctrl_ulps(1, &mfd->pdev->dev);
+		if (mdp5_data->mdata->idle_pc) {
+			rc = mdss_mdp_footswitch_ctrl_idle_pc(1,
+					&mfd->pdev->dev);
 			if (rc) {
 				pr_err("footswtich control power on failed rc=%d\n",
 									rc);
@@ -1323,6 +1324,7 @@ int mdss_mdp_overlay_kickoff(struct msm_fb_data_type *mfd,
 	}
 
 	mutex_lock(&mdp5_data->ov_lock);
+	ctl->bw_pending = 0;
 	if (mfd->panel_info->type == DTV_PANEL) {
 		ret = mdss_mdp_overlay_start(mfd);
 		if (ret) {
@@ -3613,6 +3615,7 @@ void mdss_mdp_underrun_dump_info(struct msm_fb_data_type *mfd)
 {
 	struct mdss_mdp_pipe *pipe;
 	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
+	int pcount = mdp5_data->mdata->nrgb_pipes+ mdp5_data->mdata->nvig_pipes+mdp5_data->mdata->ndma_pipes;
 
 	pr_info(" ============ dump_start ===========\n");
 
@@ -3625,6 +3628,8 @@ void mdss_mdp_underrun_dump_info(struct msm_fb_data_type *mfd)
 			pipe->flags, pipe->src_fmt->format, pipe->src_fmt->bpp,
 			pipe->ndx);
 		pr_info("pipe addr : %p\n", pipe);
+		pcount--;
+		if(!pcount) break;
 	}
 
 	mdss_mdp_underrun_clk_info();

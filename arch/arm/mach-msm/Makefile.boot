@@ -230,10 +230,16 @@ else
 	dtb-$(CONFIG_SEC_CHAGALL_PROJECT)	+= msm8974-sec-chagall-r03.dtb
 endif
 endif
+ifeq ($(CONFIG_SEC_LOCALE_JPN),y)
+	dtb-$(CONFIG_SEC_KLIMT_PROJECT) += msm8974-sec-klimtjpn-r03.dtb
+	dtb-$(CONFIG_SEC_KLIMT_PROJECT) += msm8974-sec-klimtjpn-r04.dtb
+	dtb-$(CONFIG_SEC_KLIMT_PROJECT) += msm8974-sec-klimtjpn-r05.dtb
+else
 	dtb-$(CONFIG_SEC_KLIMT_PROJECT)	+= msm8974-sec-klimt-r00.dtb
 	dtb-$(CONFIG_SEC_KLIMT_PROJECT)	+= msm8974-sec-klimt-r01.dtb
 	dtb-$(CONFIG_SEC_KLIMT_PROJECT)	+= msm8974-sec-klimt-r02.dtb
 	dtb-$(CONFIG_SEC_KLIMT_PROJECT)	+= msm8974-sec-klimt-r03.dtb
+endif
 	dtb-$(CONFIG_SEC_V2_PROJECT)	+= msm8974-sec-v2lte-r00.dtb
 	dtb-$(CONFIG_SEC_V2_PROJECT)	+= msm8974-sec-v2lte-r01.dtb
 	dtb-$(CONFIG_SEC_V2_PROJECT)	+= msm8974-sec-v2lte-r02.dtb

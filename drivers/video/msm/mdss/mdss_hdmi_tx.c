@@ -4019,6 +4019,7 @@ static int __devinit hdmi_tx_probe(struct platform_device *pdev)
 		DEV_DBG("%s: Add child devices.\n", __func__);
 	}
 
+        hdmi_ctrl->mhl_max_pclk = 1;
 	if (mdss_debug_register_base("hdmi",
 			hdmi_ctrl->pdata.io[HDMI_TX_CORE_IO].base,
 			hdmi_ctrl->pdata.io[HDMI_TX_CORE_IO].len))

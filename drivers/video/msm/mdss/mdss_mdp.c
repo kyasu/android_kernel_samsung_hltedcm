@@ -2407,6 +2407,8 @@ static int mdss_mdp_parse_dt_misc(struct platform_device *pdev)
 		"qcom,mdss-has-wfd-blk");
 	mdata->has_no_lut_read = of_property_read_bool(pdev->dev.of_node,
 		"qcom,mdss-no-lut-read");
+	mdata->idle_pc_enabled = of_property_read_bool(pdev->dev.of_node,
+		"qcom,mdss-idle-power-collapse-enabled");
 	prop = of_find_property(pdev->dev.of_node, "batfet-supply", NULL);
 	mdata->batfet_required = prop ? true : false;
 	rc = of_property_read_u32(pdev->dev.of_node,
@@ -2711,7 +2713,7 @@ static void mdss_mdp_footswitch_ctrl(struct mdss_data_type *mdata, int on)
 		pr_debug("Enable MDP FS\n");
 		if (!mdata->fs_ena) {
 			regulator_enable(mdata->fs);
-			if (!mdata->ulps) {
+			if (!mdata->idle_pc) {
 				mdss_mdp_cx_ctrl(mdata, true);
 				mdss_mdp_batfet_ctrl(mdata, true);
 			}
@@ -2721,7 +2723,7 @@ static void mdss_mdp_footswitch_ctrl(struct mdss_data_type *mdata, int on)
 		pr_debug("Disable MDP FS\n");
 		if (mdata->fs_ena) {
 			regulator_disable(mdata->fs);
-			if (!mdata->ulps) {
+			if (!mdata->idle_pc) {
 				mdss_mdp_cx_ctrl(mdata, false);
 				mdss_mdp_batfet_ctrl(mdata, false);
 			}
@@ -2731,17 +2733,16 @@ static void mdss_mdp_footswitch_ctrl(struct mdss_data_type *mdata, int on)
 }
 
 /**
- * mdss_mdp_footswitch_ctrl_ulps() - MDSS GDSC control with ULPS feature
+ * mdss_mdp_footswitch_ctrl_idle_pc() - MDSS GDSC control with idle power collapse
  * @on: 1 to turn on footswitch, 0 to turn off footswitch
  * @dev: framebuffer device node
  *
  * MDSS GDSC can be voted off during idle-screen usecase for MIPI DSI command
- * mode displays with Ultra-Low Power State (ULPS) feature enabled. Upon
- * subsequent frame update, MDSS GDSC needs to turned back on and hw state
- * needs to be restored. It returns error if footswitch control API
- * fails.
+ * mode displays. Upon subsequent frame update, MDSS GDSC needs to turned back
+ * on and hw state needs to be restored. It returns error if footswitch control
+ * API fails.
  */
-int mdss_mdp_footswitch_ctrl_ulps(int on, struct device *dev)
+int mdss_mdp_footswitch_ctrl_idle_pc(int on, struct device *dev)
 {
 	struct mdss_data_type *mdata = mdss_mdp_get_mdata();
 	int rc = 0;
@@ -2755,10 +2756,10 @@ int mdss_mdp_footswitch_ctrl_ulps(int on, struct device *dev)
 			return rc;
 		}
 		mdss_hw_init(mdata);
-		mdata->ulps = false;
+		mdata->idle_pc = false;
 		mdss_iommu_ctrl(0);
 	} else {
-		mdata->ulps = true;
+		mdata->idle_pc = true;
 		pm_runtime_put_sync(dev);
 	}
 
@@ -2851,7 +2852,10 @@ static int mdss_mdp_runtime_resume(struct device *dev)
 		return -ENODEV;
 
 	dev_dbg(dev, "pm_runtime: resuming...\n");
-	device_for_each_child(dev, &device_on, mdss_fb_suspres_panel);
+
+	/* do not resume panels when coming out of idle power collapse */
+	if (!mdata->idle_pc)
+		device_for_each_child(dev, &device_on, mdss_fb_suspres_panel);
 	mdss_mdp_footswitch_ctrl(mdata, true);
 
 	return 0;
@@ -2880,7 +2884,10 @@ static int mdss_mdp_runtime_suspend(struct device *dev)
 		pr_err("MDP suspend failed\n");
 		return -EBUSY;
 	}
-	device_for_each_child(dev, &device_on, mdss_fb_suspres_panel);
+
+	/* do not suspend panels when going in to idle power collapse */
+	if (!mdata->idle_pc)
+		device_for_each_child(dev, &device_on, mdss_fb_suspres_panel);
 	mdss_mdp_footswitch_ctrl(mdata, false);
 
 	return 0;

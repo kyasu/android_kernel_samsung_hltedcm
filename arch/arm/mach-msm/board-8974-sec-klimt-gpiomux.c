@@ -62,6 +62,9 @@ static struct gpiomux_setting gpio_suspend_config[] = {
 	}
 
 static struct msm_gpiomux_config gpio_nc_configs[] __initdata = {
+#if defined(CONFIG_MACH_KLIMT_LTE_DCM)
+	GPIOMUX_SET_NC(8),
+#endif
 	GPIOMUX_SET_NC(9),
 	GPIOMUX_SET_NC(18),
 	GPIOMUX_SET_NC(43),
@@ -70,9 +73,11 @@ static struct msm_gpiomux_config gpio_nc_configs[] __initdata = {
 	GPIOMUX_SET_NC(59),
 	GPIOMUX_SET_NC(63),
 	GPIOMUX_SET_NC(69),
+#if !defined(CONFIG_MACH_KLIMT_LTE_DCM)
 	GPIOMUX_SET_NC(74),
 	GPIOMUX_SET_NC(79),
 	GPIOMUX_SET_NC(81),
+#endif
 	GPIOMUX_SET_NC(85),
 	GPIOMUX_SET_NC(89),
 	GPIOMUX_SET_NC(90),
@@ -232,11 +237,13 @@ static struct gpiomux_setting gpio_spi_config = {
 	.pull = GPIOMUX_PULL_NONE,
 };
 
+#if !defined(CONFIG_MACH_KLIMT_LTE_DCM)
 static struct gpiomux_setting gpio_spi_cs1_config = {
 	.func = GPIOMUX_FUNC_GPIO,
 	.drv = GPIOMUX_DRV_6MA,
 	.pull = GPIOMUX_PULL_UP,
 };
+#endif
 
 static struct gpiomux_setting gpio_spi_cs3_config = {
 	.func = GPIOMUX_FUNC_1,
@@ -255,12 +262,14 @@ static struct msm_gpiomux_config msm_eth_configs[] = {
 };
 #endif
 
+#if !defined(CONFIG_MACH_KLIMT_LTE_DCM)
 static struct gpiomux_setting gpio_epm_config = {
 	.func = GPIOMUX_FUNC_GPIO,
 	.drv  = GPIOMUX_DRV_2MA,
 	.pull = GPIOMUX_PULL_NONE,
 	.dir = GPIOMUX_OUT_HIGH,
 };
+#endif
 
 static struct gpiomux_setting gpio_epm_marker_config = {
 	.func = GPIOMUX_FUNC_GPIO,
@@ -281,6 +290,7 @@ static struct gpiomux_setting wcnss_5wire_active_cfg = {
 	.pull = GPIOMUX_PULL_DOWN,
 };
 #endif
+#if !defined(CONFIG_MACH_KLIMT_LTE_DCM)
 static struct gpiomux_setting ath_gpio_active_cfg = {
 	.func = GPIOMUX_FUNC_GPIO,
 	.drv = GPIOMUX_DRV_2MA,
@@ -292,7 +302,7 @@ static struct gpiomux_setting ath_gpio_suspend_cfg = {
 	.drv = GPIOMUX_DRV_2MA,
 	.pull = GPIOMUX_PULL_DOWN,
 };
-
+#endif
 static struct gpiomux_setting gpio_i2c_config = {
 	.func = GPIOMUX_FUNC_3,
 	/*
@@ -596,6 +606,53 @@ static struct msm_gpiomux_config mhl_configs[] __initdata = {
 };
 #endif
 
+#if defined(CONFIG_ISDBT_FC8300)
+static struct gpiomux_setting isdb_i2c_config = {
+	.func = GPIOMUX_FUNC_3,
+	.drv = GPIOMUX_DRV_2MA,
+	.pull = GPIOMUX_PULL_NONE,
+	.dir = GPIOMUX_OUT_LOW,
+};
+static struct msm_gpiomux_config msm8974_isdbt_configs[] __initdata = {	
+	{
+		.gpio	   = 88,	/* I2C_SCL */
+		.settings = {
+			[GPIOMUX_ACTIVE] = &isdb_i2c_config,
+			[GPIOMUX_SUSPENDED] = &isdb_i2c_config,
+		},
+	},
+	{
+		.gpio	   = 87,	/* I2C_SDA */
+		.settings = {
+			[GPIOMUX_ACTIVE] = &isdb_i2c_config,
+			[GPIOMUX_SUSPENDED] = &isdb_i2c_config,
+		},
+	},
+	{
+		.gpio	= 74,		/* TMM_INT */
+		.settings = {
+			[GPIOMUX_ACTIVE] = &gpio_suspend_config[2],
+			[GPIOMUX_SUSPENDED] = &gpio_suspend_config[2],
+		},
+	},
+	{
+		.gpio	= 79,		/* TMM_RST */
+		.settings = {
+			[GPIOMUX_ACTIVE] = &gpio_suspend_config[2],
+			[GPIOMUX_SUSPENDED] = &gpio_suspend_config[2],
+		},
+	},
+	{
+		.gpio	= 81,		/* TMM_PWR_EN */
+		.settings = {
+			[GPIOMUX_ACTIVE] = &gpio_suspend_config[1],
+			[GPIOMUX_SUSPENDED] = &gpio_suspend_config[1],
+		},
+	},
+
+};
+#endif
+
 static struct msm_gpiomux_config hw_rev_configs[] __initdata = {
 	{
 		.gpio = 16,	/* HW_REV(0) */
@@ -755,12 +812,14 @@ static struct msm_gpiomux_config msm_disp_configs[] __initdata = {
 };
 
 static struct msm_gpiomux_config msm_epm_configs[] __initdata = {
+#if !defined(CONFIG_MACH_KLIMT_LTE_DCM)
 	{
 		.gpio      = 81,		/* EPM enable */
 		.settings = {
 			[GPIOMUX_SUSPENDED] = &gpio_epm_config,
 		},
 	},
+#endif
 	{
 		.gpio      = 85,		/* EPM MARKER2 */
 		.settings = {
@@ -807,12 +866,14 @@ static struct msm_gpiomux_config msm_blsp_configs[] __initdata = {
 			[GPIOMUX_SUSPENDED] = &gpio_spi_cs2_config,
 		},
 	},
+#if !defined(CONFIG_MACH_KLIMT_LTE_DCM)
 	{
 		.gpio      = 8,		/* BLSP1 QUP SPI_CS1_N */
 		.settings = {
 			[GPIOMUX_SUSPENDED] = &gpio_spi_cs1_config,
 		},
 	},
+#endif
 #endif
 	{
 		.gpio      = 6,		/* BLSP1 QUP2 I2C_DAT */
@@ -842,6 +903,7 @@ static struct msm_gpiomux_config msm_blsp_configs[] __initdata = {
 		},
 	},
 #endif
+#ifndef CONFIG_ISDBT_FC8300
 	{
 		.gpio      = 87,		/* BLSP12 QUP I2C_DAT */
 		.settings = {
@@ -854,6 +916,7 @@ static struct msm_gpiomux_config msm_blsp_configs[] __initdata = {
 			[GPIOMUX_SUSPENDED] = &gpio_i2c_config,
 		},
 	},
+#endif	
 	{
 		.gpio      = 4,			/* BLSP2 UART TX */
 		.settings = {
@@ -1345,6 +1408,7 @@ static struct msm_gpiomux_config msm8974_pri_pri_auxpcm_configs[] __initdata = {
 
 /* Primary AUXPCM port sharing GPIO lines with Tertiary MI2S */
 static struct msm_gpiomux_config msm8974_pri_ter_auxpcm_configs[] __initdata = {
+#if !defined(CONFIG_MACH_KLIMT_LTE_DCM)
 	{
 		.gpio = 74,
 		.settings = {
@@ -1352,6 +1416,7 @@ static struct msm_gpiomux_config msm8974_pri_ter_auxpcm_configs[] __initdata = {
 			[GPIOMUX_ACTIVE] = &auxpcm_act_cfg,
 		},
 	},
+#endif
 	{
 		.gpio = 75,
 		.settings = {
@@ -1440,6 +1505,7 @@ static struct msm_gpiomux_config wcnss_5wire_interface[] = {
 };
 #endif
 static struct msm_gpiomux_config ath_gpio_configs[] = {
+#if !defined(CONFIG_MACH_KLIMT_LTE_DCM)
 	{
 		.gpio = 79,
 		.settings = {
@@ -1447,6 +1513,7 @@ static struct msm_gpiomux_config ath_gpio_configs[] = {
 			[GPIOMUX_SUSPENDED] = &ath_gpio_suspend_cfg,
 		},
 	},
+#endif
 };
 
 static struct gpiomux_setting gpio_speaker_suspend_config = {
@@ -1456,6 +1523,7 @@ static struct gpiomux_setting gpio_speaker_suspend_config = {
 	.dir = GPIOMUX_OUT_LOW,
 };
 
+#if !defined(CONFIG_MACH_KLIMT_LTE_DCM)
 static struct gpiomux_setting tx_gtr_thres_suspend_config = {
 	.func = GPIOMUX_FUNC_GPIO,
 	.drv = GPIOMUX_DRV_2MA,
@@ -1471,6 +1539,7 @@ static struct msm_gpiomux_config tx_gtr_thres_enable_config[] __initdata = {
 		},
 	},
 };
+#endif
 
 static struct msm_gpiomux_config speaker_enable_config[] __initdata = {
 	{
@@ -1786,7 +1855,9 @@ void __init msm_8974_init_gpiomux(void)
 #if defined(CONFIG_BT_BCM4335) || defined(CONFIG_BT_BCM4339) || defined(CONFIG_BT_BCM4354)
 	msm_gpiomux_btuart_install();
 #endif
-
+#if defined(CONFIG_ISDBT_FC8300)
+	msm_gpiomux_install(msm8974_isdbt_configs,ARRAY_SIZE(msm8974_isdbt_configs));
+#endif
 	if (of_board_is_liquid())
 		msm_gpiomux_install_nowrite(ath_gpio_configs,
 					ARRAY_SIZE(ath_gpio_configs));
@@ -1818,7 +1889,9 @@ void __init msm_8974_init_gpiomux(void)
 		msm_gpiomux_sdc4_install();
 
 	msm_gpiomux_install(msm_taiko_config, ARRAY_SIZE(msm_taiko_config));
+#if !defined(CONFIG_MACH_KLIMT_LTE_DCM)
 	msm_gpiomux_install(tx_gtr_thres_enable_config, ARRAY_SIZE(tx_gtr_thres_enable_config));
+#endif
 	msm_gpiomux_install(speaker_enable_config, ARRAY_SIZE(speaker_enable_config));
 	msm_gpiomux_install(if_con_sense_18_config, ARRAY_SIZE(if_con_sense_18_config));
 	msm_gpiomux_install(msm_hsic_hub_configs,

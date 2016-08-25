@@ -1001,7 +1001,8 @@ static struct sec_therm_platform_data sec_therm_pdata = {
 	.adc_table	= temper_table_ap,
 	.polling_interval = 30 * 1000, /* msecs */
 	.get_siop_level = get_msm8974_siop_level,
-#if defined(CONFIG_MACH_HLTEDCM) || defined(CONFIG_MACH_HLTEKDI) || defined(CONFIG_MACH_JS01LTEDCM) || defined(CONFIG_MACH_KLTE_JPN)
+#if defined(CONFIG_MACH_HLTEDCM) || defined(CONFIG_MACH_HLTEKDI) || defined(CONFIG_MACH_JS01LTEDCM) || defined(CONFIG_MACH_KLTE_JPN) || \
+    defined(CONFIG_MACH_CHAGALL_KDI) || defined(CONFIG_MACH_KLIMT_LTE_DCM)
 	#if defined(CONFIG_MACH_HLTEDCM) || defined(CONFIG_MACH_HLTEKDI)
 	.adc_flash_arr_size = ARRAY_SIZE(temper_table_flash),
 	.adc_table_flash = temper_table_flash,

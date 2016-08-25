@@ -1831,7 +1831,7 @@ static void sec_bat_get_battery_info(
 	union power_supply_propval value;
 #if defined(CONFIG_MACH_VIENNAEUR) || defined(CONFIG_MACH_VIENNAVZW) || defined(CONFIG_MACH_VIENNAKOR) || defined(CONFIG_MACH_V2) || \
 	defined(CONFIG_SEC_MILLET_PROJECT) || defined(CONFIG_SEC_MATISSE_PROJECT) || defined(CONFIG_SEC_DEGAS_PROJECT) || \
-	defined(CONFIG_AFC_CHARGER_MODE)
+	defined(CONFIG_AFC_CHARGER_MODE) || defined(CONFIG_MACH_KLTE_USC) || defined(CONFIG_MACH_KLIMT_VZW)
 	static struct timespec old_ts;
 	struct timespec c_ts;
 
@@ -1935,7 +1935,7 @@ static void sec_bat_get_battery_info(
 
 #if defined(CONFIG_MACH_VIENNAEUR) || defined(CONFIG_MACH_VIENNAVZW) || defined(CONFIG_MACH_VIENNAKOR) || defined(CONFIG_MACH_V2) || \
 	defined(CONFIG_SEC_MILLET_PROJECT) || defined(CONFIG_SEC_MATISSE_PROJECT) || defined(CONFIG_SEC_DEGAS_PROJECT) || \
-	defined(CONFIG_AFC_CHARGER_MODE)
+	defined(CONFIG_AFC_CHARGER_MODE) || defined(CONFIG_MACH_KLTE_USC) || defined(CONFIG_MACH_KLIMT_VZW)
 	/* if the battery status was full, and SOC wasn't 100% yet,
 		then ignore FG SOC, and report (previous SOC +1)% */
 	if (battery->status != POWER_SUPPLY_STATUS_FULL) {
@@ -3467,7 +3467,7 @@ static int sec_bat_get_property(struct power_supply *psy,
 
 #if defined(CONFIG_MACH_VIENNAEUR) || defined(CONFIG_MACH_VIENNAVZW) || defined(CONFIG_MACH_VIENNAKOR) || defined(CONFIG_MACH_V2) || \
 	defined(CONFIG_SEC_MILLET_PROJECT) || defined(CONFIG_SEC_MATISSE_PROJECT) || \
-	defined(CONFIG_AFC_CHARGER_MODE)
+	defined(CONFIG_AFC_CHARGER_MODE) || defined(CONFIG_MACH_KLTE_USC) || defined(CONFIG_MACH_KLIMT_VZW)
 			if (battery->status == POWER_SUPPLY_STATUS_FULL &&
 				battery->capacity != 100) {
 				val->intval = POWER_SUPPLY_STATUS_CHARGING;
@@ -3555,7 +3555,7 @@ static int sec_bat_get_property(struct power_supply *psy,
 #else
 #if defined(CONFIG_MACH_VIENNAEUR) || defined(CONFIG_MACH_VIENNAVZW) || defined(CONFIG_MACH_VIENNAKOR) || defined(CONFIG_MACH_V2) || \
 	defined(CONFIG_SEC_MILLET_PROJECT) || defined(CONFIG_SEC_MATISSE_PROJECT) || \
-	defined(CONFIG_AFC_CHARGER_MODE)
+	defined(CONFIG_AFC_CHARGER_MODE) || defined(CONFIG_MACH_KLTE_USC) || defined(CONFIG_MACH_KLIMT_VZW)
 		val->intval = battery->capacity;
 #else
 		/* In full-charged status, SOC is always 100% */

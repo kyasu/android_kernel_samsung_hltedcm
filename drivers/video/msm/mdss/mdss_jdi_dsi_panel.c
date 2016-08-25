@@ -285,7 +285,7 @@ static ssize_t mipi_samsung_disp_get_power(struct device *dev,
 	if (unlikely(mfd->key != MFD_KEY))
 		return -EINVAL;
 
-	rc = snprintf((char *)buf, sizeof(buf), "%d\n", mfd->panel_power_on);
+	rc = snprintf((char *)buf, 10, "%d\n", mfd->panel_power_on);
 	pr_info("mipi_samsung_disp_get_power(%d)\n", mfd->panel_power_on);
 
 	return rc;
@@ -352,7 +352,7 @@ static ssize_t mipi_samsung_disp_cabc_show(struct device *dev,
 {
 	int rc;
 
-	rc = snprintf((char *)buf, sizeof(buf), "%d\n", msd.dstat.cabc_on);
+	rc = snprintf((char *)buf, 10, "%d\n", msd.dstat.cabc_on);
 	pr_info("cabc status: %c\n", *buf);
 
 	return rc;
@@ -404,7 +404,7 @@ static ssize_t mipi_samsung_disp_siop_show(struct device *dev,
 {
 	int rc;
 
-	rc = snprintf((char *)buf, sizeof(buf), "%d\n", msd.dstat.siop_status);
+	rc = snprintf((char *)buf, 10, "%d\n", msd.dstat.siop_status);
 	pr_info("siop status: %d\n", *buf);
 
 	return rc;
@@ -474,7 +474,7 @@ static ssize_t mipi_samsung_backlight_show(struct device *dev,
 {
 	int rc;
 
-	rc = snprintf((char *)buf, sizeof(buf), "%d\n",
+	rc = snprintf((char *)buf, 10, "%d\n",
 					msd.dstat.bright_level );
 	pr_info("backlight : %d\n", *buf);
 
@@ -499,7 +499,7 @@ static ssize_t mipi_samsung_auto_brightness_show(struct device *dev,
 {
 	int rc;
 
-	rc = snprintf((char *)buf, sizeof(buf), "%d\n",
+	rc = snprintf((char *)buf, 10, "%d\n",
 					msd.dstat.auto_brightness);
 	pr_info("auto_brightness: %d\n", *buf);
 
@@ -1387,6 +1387,9 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	pinfo->bl_min = (!rc ? res[0] : 0);
 	pinfo->bl_max = (!rc ? res[1] : 255);
 	ctrl_pdata->bklt_max = pinfo->bl_max;
+
+	rc = of_property_read_u32(np, "qcom,mdss-brightness-max-level", &tmp);
+	pinfo->brightness_max = (!rc ? tmp : MDSS_MAX_BL_BRIGHTNESS);
 
 	rc = of_property_read_u32(np, "qcom,mdss-pan-dsi-mode", &tmp);
 	pinfo->mipi.mode = (!rc ? tmp : DSI_VIDEO_MODE);

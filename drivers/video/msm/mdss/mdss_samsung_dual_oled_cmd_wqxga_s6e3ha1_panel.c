@@ -1093,7 +1093,6 @@ static int mipi_samsung_disp_send_cmd(
 #if defined(HBM_RE)
 			if(msd.dstat.auto_brightness == 6) {
 				cmd_size = make_brightcontrol_hbm_set();
-				msd.dstat.hbm_mode = 1;
 			} else {
 				msd.dstat.hbm_mode = 0;
 				cmd_size = make_brightcontrol_set(msd.dstat.bright_level);
@@ -1609,6 +1608,108 @@ error2:
 	return -EINVAL;
 
 }
+
+int mdss_panel_dt_get_dst_fmt(u32 bpp, char mipi_mode, u32 pixel_packing,
+				char *dst_format)
+{
+	int rc = 0;
+	switch (bpp) {
+	case 3:
+		*dst_format = DSI_CMD_DST_FORMAT_RGB111;
+		break;
+	case 8:
+		*dst_format = DSI_CMD_DST_FORMAT_RGB332;
+		break;
+	case 12:
+		*dst_format = DSI_CMD_DST_FORMAT_RGB444;
+		break;
+	case 16:
+		switch (mipi_mode) {
+		case DSI_VIDEO_MODE:
+			*dst_format = DSI_VIDEO_DST_FORMAT_RGB565;
+			break;
+		case DSI_CMD_MODE:
+			*dst_format = DSI_CMD_DST_FORMAT_RGB565;
+			break;
+		default:
+			*dst_format = DSI_VIDEO_DST_FORMAT_RGB565;
+			break;
+		}
+		break;
+	case 18:
+		switch (mipi_mode) {
+		case DSI_VIDEO_MODE:
+			if (pixel_packing == 0)
+				*dst_format = DSI_VIDEO_DST_FORMAT_RGB666;
+			else
+				*dst_format = DSI_VIDEO_DST_FORMAT_RGB666_LOOSE;
+			break;
+		case DSI_CMD_MODE:
+			*dst_format = DSI_CMD_DST_FORMAT_RGB666;
+			break;
+		default:
+			if (pixel_packing == 0)
+				*dst_format = DSI_VIDEO_DST_FORMAT_RGB666;
+			else
+				*dst_format = DSI_VIDEO_DST_FORMAT_RGB666_LOOSE;
+			break;
+		}
+		break;
+	case 24:
+		switch (mipi_mode) {
+		case DSI_VIDEO_MODE:
+			*dst_format = DSI_VIDEO_DST_FORMAT_RGB888;
+			break;
+		case DSI_CMD_MODE:
+			*dst_format = DSI_CMD_DST_FORMAT_RGB888;
+			break;
+		default:
+			*dst_format = DSI_VIDEO_DST_FORMAT_RGB888;
+			break;
+		}
+		break;
+	default:
+		rc = -EINVAL;
+		break;
+	}
+	return rc;
+}
+
+static void mdss_panel_parse_te_params(struct device_node *np,
+				       struct mdss_panel_info *panel_info)
+{
+
+	u32 tmp;
+	int rc = 0;
+	/*
+	 * TE default: dsi byte clock calculated base on 70 fps;
+	 * around 14 ms to complete a kickoff cycle if te disabled;
+	 * vclk_line base on 60 fps; write is faster than read;
+	 * init == start == rdptr;
+	 */
+	panel_info->te.tear_check_en =
+		!of_property_read_bool(np, "qcom,mdss-tear-check-disable");
+	rc = of_property_read_u32
+		(np, "qcom,mdss-tear-check-sync-cfg-height", &tmp);
+	panel_info->te.sync_cfg_height = (!rc ? tmp : 0xfff0);
+	rc = of_property_read_u32
+		(np, "qcom,mdss-tear-check-sync-init-val", &tmp);
+	panel_info->te.vsync_init_val = (!rc ? tmp : panel_info->yres);
+	rc = of_property_read_u32
+		(np, "qcom,mdss-tear-check-sync-threshold-start", &tmp);
+	panel_info->te.sync_threshold_start = (!rc ? tmp : 4);
+	rc = of_property_read_u32
+		(np, "qcom,mdss-tear-check-sync-threshold-continue", &tmp);
+	panel_info->te.sync_threshold_continue = (!rc ? tmp : 4);
+	rc = of_property_read_u32(np, "qcom,mdss-tear-check-start-pos", &tmp);
+	panel_info->te.start_pos = (!rc ? tmp : panel_info->yres);
+	rc = of_property_read_u32
+		(np, "qcom,mdss-tear-check-rd-ptr-trigger-intr", &tmp);
+	panel_info->te.rd_ptr_irq = (!rc ? tmp : panel_info->yres + 1);
+	rc = of_property_read_u32(np, "qcom,mdss-tear-check-frame-rate", &tmp);
+	panel_info->te.refx100 = (!rc ? tmp : 6000);
+}
+
 static int mdss_dsi_parse_dcs_cmds(struct device_node *np,
 		struct dsi_panel_cmds *pcmds, char *cmd_key, char *link_key)
 {
@@ -1861,12 +1962,13 @@ static int mdss_panel_parse_dt(struct device_node *np,
 		"qcom,mdss-pan-wr-mem-start", &tmp);
 	pinfo->mipi.wr_mem_start =
 		(!rc ? tmp : 0x2c);
-
+/*
 	rc = of_property_read_u32(np,
 		"qcom,mdss-pan-te-sel", &tmp);
 	pinfo->mipi.te_sel =
 		(!rc ? tmp : 1);
-
+*/
+	mdss_panel_parse_te_params(np, pinfo);
 	rc = of_property_read_u32(np,
 		"qcom,mdss-pan-dsi-dst-format", &tmp);
 	pinfo->mipi.dst_format =
@@ -2151,6 +2253,11 @@ static int samsung_dsi_panel_event_handler(int event)
 			if(msd.dstat.wait_disp_on) {
 				pr_info("DISPLAY_ON\n");
 				mipi_samsung_disp_send_cmd(PANEL_DISPLAY_ON, true);
+				if (msd.dstat.auto_brightness == 6 && !msd.dstat.hbm_mode) {
+					mipi_samsung_disp_send_cmd(PANEL_BRIGHT_CTRL, true);
+					msd.dstat.hbm_mode = 1;
+					pr_debug("DISPLAY_ON  HBM Mode Applied\n");
+				}
 				msd.dstat.wait_disp_on = 0;
 			}
 			break;
@@ -2375,7 +2482,7 @@ static ssize_t mipi_samsung_disp_get_power(struct device *dev,
 	if (unlikely(mfd->key != MFD_KEY))
 		return -EINVAL;
 
-	rc = snprintf((char *)buf, sizeof(buf), "%d\n", mfd->panel_power_on);
+	rc = snprintf((char *)buf, PAGE_SIZE, "%d\n", mfd->panel_power_on);
 	pr_info("mipi_samsung_disp_get_power(%d)\n", mfd->panel_power_on);
 
 	return rc;
@@ -2430,7 +2537,7 @@ static ssize_t mipi_samsung_disp_windowtype_show(struct device *dev,
 	id2 = (msd.manufacture_id & 0x0000FF00) >> 8;
 	id3 = msd.manufacture_id & 0xFF;
 
-	snprintf(temp, sizeof(temp), "%x %x %x\n",	id1, id2, id3);
+	snprintf(temp, PAGE_SIZE, "%x %x %x\n",	id1, id2, id3);
 	strlcat(buf, temp, 15);
 	return strnlen(buf, 15);
 }
@@ -2440,7 +2547,7 @@ static ssize_t mipi_samsung_disp_manufacture_date_show(struct device *dev,
 {
 	char temp[30];
 
-	snprintf((char *)temp, sizeof(temp), "manufacture date : %d\n", msd.manufacture_date);
+	snprintf((char *)temp, PAGE_SIZE, "manufacture date : %d\n", msd.manufacture_date);
 	strlcat(buf, temp, 30);
 
 	pr_info("manufacture date : %d\n", msd.manufacture_date);
@@ -2468,7 +2575,7 @@ static ssize_t mipi_samsung_disp_acl_show(struct device *dev,
 {
 	int rc;
 
-	rc = snprintf((char *)buf, sizeof(buf), "%d\n", msd.dstat.acl_on);
+	rc = snprintf((char *)buf, PAGE_SIZE, "%d\n", msd.dstat.acl_on);
 	pr_info("acl status: %d\n", *buf);
 
 	return rc;
@@ -2530,7 +2637,7 @@ static ssize_t mipi_samsung_disp_siop_show(struct device *dev,
 {
 	int rc;
 
-	rc = snprintf((char *)buf, sizeof(buf), "%d\n", msd.dstat.siop_status);
+	rc = snprintf((char *)buf, PAGE_SIZE, "%d\n", msd.dstat.siop_status);
 	pr_info("siop status: %d\n", *buf);
 
 	return rc;
@@ -2591,8 +2698,10 @@ static ssize_t mipi_samsung_aid_log_show(struct device *dev,
 {
 	int rc = 0;
 
-	if (msd.dstat.is_smart_dim_loaded)
+	if (msd.dstat.is_smart_dim_loaded){
+		if(msd.sdimconf->print_aid_log)
 		msd.sdimconf->print_aid_log();
+	}
 	else
 		pr_err("smart dim is not loaded..\n");
 
@@ -2605,7 +2714,7 @@ static ssize_t mipi_samsung_auto_brightness_show(struct device *dev,
 {
 	int rc;
 
-	rc = snprintf((char *)buf, sizeof(buf), "%d\n",
+	rc = snprintf((char *)buf, PAGE_SIZE, "%d\n",
 					msd.dstat.auto_brightness);
 	pr_info("auto_brightness: %d\n", *buf);
 
